@@ -1,0 +1,132 @@
+#!/bin/bash
+
+DIR=~/.2fa
+
+usage() {
+    if [ -n "$1" ]; then
+        echo "Error: $1"
+        echo
+    fi
+    echo "Usage: $PROGRAM <command> <arguments>"
+    echo "Commands:"
+    echo "  init <key>          - initialize 2fa with a key"
+    echo "  list                - list all services"
+    echo "  store <service>     - store a secret for a service"
+    echo "  get <service>       - get a secret for a service"
+    echo "  remove <service>    - remove a service"
+    exit 1
+}
+
+cmd_init() {
+    key=$1
+
+    if [ -d $DIR ]; then
+        echo "2fa already initialized"
+        exit 1
+    fi
+
+    if [ -z $key ]; then
+        usage "No key provided"
+    else 
+        echo "Initializing 2fa with key: $key"
+        echo "This key will be used to encrypt your secrets"
+    fi
+
+    mkdir $DIR 
+    mkdir $DIR/2fa
+    git init $DIR
+
+    echo $key > $DIR/key 
+}
+
+cmd_store() {
+    service=$1
+    read -s secret
+    
+    if [ -z $service ] || [ -z $secret ]; then
+        usage "Missing arguments"
+    fi
+
+    key=$(cat $DIR/key)
+
+    echo -ne "$secret" | gpg -q -e -r $key > $DIR/2fa/$service
+}
+
+cmd_list() {
+    echo "2fa Store:"
+    ls -1 $DIR/2fa | sed -E 's/(.*)/└── \1/'
+}
+
+cmd_get() {
+    service=$1
+
+    if [ -z $service ]; then
+        usage "Missing arguments"
+    fi
+
+    key=$(cat $DIR/key)
+    secret=$(gpg -q -d -u $key $DIR/2fa/$service | base32 -d | xxd -p | tr -d '\n')
+
+    countdown_and_show_totp "$secret"
+}
+
+cmd_remove() {
+    service=$1
+
+    if [ -z $service ]; then
+        usage "Missing arguments"
+    fi
+
+    rm $DIR/2fa/$service
+}
+
+countdown_and_show_totp() {
+    local secret="$1"
+    local interval=30
+
+    local i=$(( $interval - $(date +%s) % $interval ))
+
+    while true; do
+        current_time=$(date +%s)
+        totp=$(calculate_totp "$secret" "$current_time")
+        i=$((interval - current_time % interval))
+
+        while [ $i -gt 0 ]; do
+            printf "\r%s (%02d)" "$totp" "$i"
+            sleep 1
+            i=$((i-1))
+        done
+    done
+}
+
+calculate_totp() {
+    local secret="$1"
+    local time="$2"
+    local interval=30
+    local digits=6
+
+    local counter=$((time / interval))
+    local hex_counter=$(printf "%016x" $counter)
+
+    local hmac=$(echo -n "$hex_counter" | xxd -r -p | openssl dgst -sha1 -mac HMAC -macopt "hexkey:$secret" | cut -d' ' -f2)
+
+    local offset=$((0x${hmac:39:2} & 0xf))
+    local truncated_hmac=${hmac:$offset*2:8}
+
+    local totp=$((0x$truncated_hmac & 0x7fffffff))
+    printf "%0${digits}d\n" $((totp % 10**digits))
+}
+
+
+PROGRAM="${0##*/}"
+COMMAND=$1
+
+case $COMMAND in 
+    init) shift;    cmd_init "$@" ;;
+    list) shift;    cmd_list "$@" ;;
+    store) shift;   cmd_store "$@" ;;
+    get) shift;     cmd_get "$@" ;;
+    remove) shift;  cmd_remove "$@" ;;
+    *)              usage ;;
+esac 
+
