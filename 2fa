@@ -34,7 +34,6 @@ cmd_init() {
 
     mkdir $DIR 
     mkdir $DIR/2fa
-    git init $DIR
 
     echo $key > $DIR/key 
 }
@@ -53,6 +52,11 @@ cmd_store() {
     secret=$(pad_base32 "$secret")
 
     echo -ne "$secret" | gpg -q -e -r $key > $DIR/2fa/$service
+
+    if [ -d "$DIR/.git" ]; then
+        git -C $DIR add $DIR/*
+        git -C $DIR commit -a -m "Added $service"
+    fi
 }
 
 cmd_list() {
@@ -81,6 +85,19 @@ cmd_remove() {
     fi
 
     rm $DIR/2fa/$service
+
+    if [ -d "$DIR/.git" ]; then
+        git -C $DIR commit -a -m "Removed $service"
+    fi
+}
+
+cmd_git() {
+    git -C $DIR "$@"
+
+    if [ "$1" == "init" ]; then
+        git -C $DIR add $DIR/*
+        git -C $DIR commit -a -m "Initialized 2fa repo"
+    fi
 }
 
 countdown_and_show_totp() {
@@ -143,6 +160,7 @@ case $COMMAND in
     store) shift;   cmd_store "$@" ;;
     get) shift;     cmd_get "$@" ;;
     remove) shift;  cmd_remove "$@" ;;
+    git) shift;     cmd_git "$@" ;;
     *)              usage ;;
 esac 
 

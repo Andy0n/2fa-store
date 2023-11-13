@@ -53,6 +53,22 @@ The countdown ticks automatically down and if reaches 0 generates a new token.
 
 Deletes the encrypted file containing the key.
 
+### Full git integration
+
+Initialize a git repository using
+
+```bash
+2fa git init
+```
+
+After that 2fa-store creates a commit every time the 2fa store is manipulated.
+
+If you want to push to a remote repository:
+
+```bash
+2fa git remote add origin example.com:repo
+2fa git push
+```
+
 ## TODO
-* Include git interface.
 * Option to not show the token, but paste it into the clipboard.
