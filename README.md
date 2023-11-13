@@ -22,6 +22,16 @@ Key should be the id to identify the gpg, that should be used.
 └── Service2
 ```
 
+If no command is given:
+
+```bash
+2fa
+```
+
+fzf will open with all available services and after choosing one, the 2fa code 
+will be shown.
+
+
 ### Adding a service:
 
 ```bash

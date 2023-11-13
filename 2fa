@@ -78,6 +78,10 @@ cmd_get() {
     countdown_and_show_totp "$secret"
 }
 
+cmd_fzf() {
+    ls -1 $DIR/2fa | fzf | xargs -I {} $0 get {} 
+}
+
 cmd_remove() {
     service=$1
 
@@ -154,6 +158,11 @@ pad_base32() {
 
 PROGRAM="${0##*/}"
 COMMAND=$1
+
+if [ -z $COMMAND ]; then
+    cmd_fzf
+    exit 0
+fi
 
 case $COMMAND in 
     init) shift;    cmd_init "$@" ;;
