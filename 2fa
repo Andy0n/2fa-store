@@ -14,6 +14,7 @@ usage() {
     echo "  store <service>     - store a secret for a service"
     echo "  get <service>       - get a secret for a service"
     echo "  remove <service>    - remove a service"
+    echo "  git <cmd> <args>    - run git in the 2fa directory"
     exit 1
 }
 
