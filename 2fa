@@ -50,6 +50,7 @@ cmd_store() {
     key=$(cat $DIR/key)
 
     secret=$(echo $secret | sed -E 's/.*secret=([^&]*).*/\1/')    
+    secret=$(pad_base32 "$secret")
 
     echo -ne "$secret" | gpg -q -e -r $key > $DIR/2fa/$service
 }
@@ -117,6 +118,19 @@ calculate_totp() {
 
     local totp=$((0x$truncated_hmac & 0x7fffffff))
     printf "%0${digits}d\n" $((totp % 10**digits))
+}
+
+pad_base32() {
+    local input="$1"
+    local len=${#input}
+    local remainder=$((len % 8))
+    local padding=$((8 - remainder))
+
+    if [ $remainder -ne 0 ]; then
+        input="${input}$(printf '%*s' "$padding" | tr ' ' '=')"
+    fi
+
+    echo "$input"
 }
 
 
