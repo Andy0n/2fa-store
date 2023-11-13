@@ -49,6 +49,8 @@ cmd_store() {
 
     key=$(cat $DIR/key)
 
+    secret=$(echo $secret | sed -E 's/.*secret=([^&]*).*/\1/')    
+
     echo -ne "$secret" | gpg -q -e -r $key > $DIR/2fa/$service
 }
 

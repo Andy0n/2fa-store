@@ -28,7 +28,8 @@ Key should be the id to identify the gpg, that should be used.
 2fa store <service>
 ```
 
-Then enter the secret and it gets automatically encrypted and saved.
+Then enter the secret and it gets automatically encrypted and saved. 
+Secret is either the Base32 String, or the whole otpauth://totp/.... string
 
 ### Retrieving a 2fa token:
 
@@ -53,6 +54,5 @@ The countdown ticks automatically down and if reaches 0 generates a new token.
 Deletes the encrypted file containing the key.
 
 ## TODO
-* Parse Base32 and oauth://.. strings.
 * Include git interface.
 * Option to not show the token, but paste it into the clipboard.
